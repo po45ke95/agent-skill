@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# 憑證 / 機密（.env.example 可以上傳，.env 不行）
+.env
+*.eml
+*.token
+xxx.txt
+
+# Claude Code 本地記憶（含個人資訊）
+.claude/memory/
