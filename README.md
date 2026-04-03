@@ -1,11 +1,63 @@
-簡易 Python Agent Skill 範本
+# k8s-troubleshoot Agent Skill
 
-說明:
-- agent_skill.py 提供一個簡易的任務註冊與執行框架。
-- 使用範例:
-  - CLI: python agent_skill.py run-task --task hello --args '{"name":"Peter"}'
-  - 程式內: from agent_skill import task, run_task
+A Claude Code agent skill for Kubernetes troubleshooting. It combines two capabilities:
 
-擴充建議:
-- 在任務中使用 type hints 與驗證 (pydantic)
-- 加入日誌、儲存輸出、或外部 API 呼叫能力
+1. **Wiki.js lookup** — searches your self-hosted wiki for runbooks and returns relevant docs as context for Claude to diagnose issues.
+2. **kubectl execution** — runs kubectl commands directly against your local or remote cluster.
+
+## Architecture
+
+```
+User reports K8s issue
+        │
+        ▼
+ [troubleshoot task]        ←─ queries wiki.js for matching runbooks
+        │
+        ▼
+ Claude analyses docs
+        │
+        ▼
+ [kubectl task]             ←─ runs verification / remediation commands
+```
+
+For operational requests (create, delete, describe, logs), Claude skips the wiki
+lookup and calls `kubectl` directly to save tokens.
+
+## Setup
+
+### Environment Variables
+
+| Variable | Description | Example |
+|---|---|---|
+| `WIKIJS_URL` | wiki.js base URL | `https://wiki.example.com` |
+| `WIKIJS_API_KEY` | API key from wiki.js Admin > API Access | `eyJhbGci...` |
+| `WIKIJS_K8S_PATH_PREFIX` | Path prefix to filter K8s pages | `/kubernetes` (default) |
+
+### Requirements
+
+- Python 3.11+
+- `kubectl` installed and kubeconfig configured (e.g. Rancher Desktop, minikube)
+
+## Quick Start
+
+```bash
+# Smoke test
+python agent_skill.py run-task --task hello --args '{"name":"Peter"}'
+
+# Troubleshoot a K8s issue (queries wiki first)
+python agent_skill.py run-task --task troubleshoot --args '{"issue":"pod stuck in Pending state"}'
+
+# Run kubectl directly
+python agent_skill.py run-task --task kubectl --args '{"command":"get pods -A"}'
+```
+
+## Available Tasks
+
+| Task | Description | Queries wiki? |
+|---|---|---|
+| `troubleshoot` | Diagnose a K8s issue using wiki runbooks | ✅ |
+| `search_docs` | Search wiki.js by keyword | ✅ |
+| `get_page` | Fetch a specific wiki page by path or ID | ✅ |
+| `list_pages` | List all K8s pages in wiki.js | ✅ |
+| `kubectl` | Run a kubectl command against the cluster | ❌ |
+| `hello` | Smoke test | ❌ |
